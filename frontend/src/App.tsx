@@ -12,6 +12,13 @@ export function App() {
         displayName={roomSession.displayName}
         publicSnapshot={roomSession.publicSnapshot}
         viewer={roomSession.viewer}
+        actions={{
+          pendingAction: roomSession.pendingAction ?? null,
+          onShuffleDeck: roomSession.shuffleDeck,
+          onDealCards: roomSession.dealCards,
+          onPlayCard: roomSession.playCard,
+          onMoveToDiscard: roomSession.moveToDiscard
+        }}
         onLeaveRoom={roomSession.leaveRoom}
       />
     );

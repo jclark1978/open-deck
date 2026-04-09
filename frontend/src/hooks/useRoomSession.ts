@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
-import type { BootstrapResponse, GameErrorEvent, PublicRoomSnapshot } from "@open-deck/shared";
+import type {
+  BootstrapResponse,
+  GameAction,
+  GameErrorEvent,
+  PublicRoomSnapshot
+} from "@open-deck/shared";
 
 import { createApiClient } from "../lib/api";
 import { createRoomSocket } from "../lib/socket";
@@ -17,6 +22,7 @@ interface RoomSessionState {
   connectionState: ConnectionState;
   displayName: string;
   errorMessage: string | null;
+  pendingAction: GameAction["type"] | null;
   publicSnapshot: PublicRoomSnapshot | null;
   viewer: BootstrapResponse["viewer"] | null;
 }
@@ -29,6 +35,7 @@ export function useRoomSession() {
     connectionState: "idle",
     displayName: "",
     errorMessage: null,
+    pendingAction: null,
     publicSnapshot: null,
     viewer: null
   });
@@ -42,6 +49,7 @@ export function useRoomSession() {
         connectionState: "connected",
         publicSnapshot: event.publicSnapshot,
         viewer: event.viewer ?? currentState.viewer,
+        pendingAction: null,
         errorMessage: null
       }));
     });
@@ -50,6 +58,7 @@ export function useRoomSession() {
       setState((currentState) => ({
         ...currentState,
         connectionState: "error",
+        pendingAction: null,
         errorMessage: toUiError(event)
       }));
     });
@@ -80,6 +89,7 @@ export function useRoomSession() {
     setState((currentState) => ({
       ...currentState,
       connectionState: "connecting",
+      pendingAction: null,
       errorMessage: null
     }));
 
@@ -100,6 +110,7 @@ export function useRoomSession() {
     setState((currentState) => ({
       ...currentState,
       connectionState: "connecting",
+      pendingAction: null,
       errorMessage: null
     }));
 
@@ -126,6 +137,7 @@ export function useRoomSession() {
       connectionState: "idle",
       displayName: "",
       errorMessage: null,
+      pendingAction: null,
       publicSnapshot: null,
       viewer: null
     });
@@ -136,6 +148,7 @@ export function useRoomSession() {
       ...currentState,
       connectionState: "connecting",
       displayName: storedSession.displayName,
+      pendingAction: null,
       errorMessage: null
     }));
 
@@ -150,6 +163,7 @@ export function useRoomSession() {
         setState((currentState) => ({
           ...currentState,
           connectionState: "idle",
+          pendingAction: null,
           publicSnapshot: bootstrapped.publicSnapshot,
           viewer: null,
           errorMessage: null
@@ -172,6 +186,7 @@ export function useRoomSession() {
       setState((currentState) => ({
         ...currentState,
         connectionState: "idle",
+        pendingAction: null,
         errorMessage: null,
         publicSnapshot: null,
         viewer: null
@@ -197,9 +212,49 @@ export function useRoomSession() {
       connectionState: "connecting",
       displayName,
       errorMessage: null,
+      pendingAction: null,
       publicSnapshot: bootstrap.publicSnapshot,
       viewer: bootstrap.viewer
     });
+  }
+
+  function shuffleDeck() {
+    return sendAction({ type: "shuffle_deck" });
+  }
+
+  function dealCards(count: number) {
+    return sendAction({ type: "deal_cards", count });
+  }
+
+  function playCard(cardId: string) {
+    return sendAction({ type: "play_card", cardId });
+  }
+
+  function moveToDiscard(cardId: string) {
+    return sendAction({ type: "move_to_discard", cardId });
+  }
+
+  function sendAction(action: GameAction) {
+    const roomCode = state.publicSnapshot?.roomCode;
+    const playerSession = state.viewer?.playerSession;
+
+    if (!roomCode || !playerSession) {
+      setState((currentState) => ({
+        ...currentState,
+        connectionState: "error",
+        errorMessage: "You are not connected to a room.",
+        pendingAction: null
+      }));
+      return;
+    }
+
+    setState((currentState) => ({
+      ...currentState,
+      pendingAction: action.type,
+      errorMessage: null
+    }));
+
+    socketRef.current.sendGameAction(roomCode, playerSession, action);
   }
 
   function persistSession(storedSession: StoredSession) {
@@ -210,6 +265,7 @@ export function useRoomSession() {
     setState((currentState) => ({
       ...currentState,
       connectionState: "error",
+      pendingAction: null,
       errorMessage: error instanceof Error ? error.message : "Something went wrong"
     }));
   }
@@ -218,10 +274,15 @@ export function useRoomSession() {
     connectionState: state.connectionState,
     displayName: state.displayName,
     errorMessage: state.errorMessage,
+    pendingAction: state.pendingAction,
     publicSnapshot: state.publicSnapshot,
     viewer: state.viewer,
     createRoom,
     joinRoom,
+    shuffleDeck,
+    dealCards,
+    playCard,
+    moveToDiscard,
     leaveRoom
   };
 }

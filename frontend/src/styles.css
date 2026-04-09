@@ -206,6 +206,13 @@ button:disabled {
   margin-top: 28px;
 }
 
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
 .stat-card,
 .panel-card {
   padding: 18px;
@@ -231,6 +238,71 @@ button:disabled {
   grid-template-columns: 1.1fr 1fr 1fr;
   gap: 16px;
   margin-top: 16px;
+}
+
+.panel-heading {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.action-status {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(24, 34, 47, 0.1);
+  color: rgba(24, 34, 47, 0.8);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.action-card {
+  display: grid;
+  gap: 14px;
+}
+
+.action-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.deal-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.deal-field {
+  display: grid;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.deal-field span {
+  color: rgba(24, 34, 47, 0.8);
+}
+
+.deal-field input,
+.deal-field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid rgba(24, 34, 47, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #18222f;
+  font: inherit;
+}
+
+.action-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .plain-list,
@@ -313,6 +385,7 @@ button:disabled {
 
   .form-grid,
   .overview-grid,
+  .control-grid,
   .panel-grid {
     grid-template-columns: 1fr;
   }
@@ -328,5 +401,19 @@ button:disabled {
 
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .deal-row,
+  .action-button-row {
+    grid-template-columns: 1fr;
+  }
+
+  .deal-row {
+    display: grid;
+  }
+
+  .action-button-row button,
+  .deal-row button {
+    width: 100%;
   }
 }

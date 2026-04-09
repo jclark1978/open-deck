@@ -1,6 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 
 import type {
+  GameAction,
   GameActionEvent,
   GameErrorEvent,
   PlayerSession,
@@ -23,6 +24,13 @@ export function createRoomSocket(baseUrl = getSocketBaseUrl()) {
     },
     joinRoom(roomCode: RoomCode, playerSession: PlayerSession) {
       socket.emit("room:join", { roomCode, playerSession });
+    },
+    sendGameAction(roomCode: RoomCode, playerSession: PlayerSession, action: GameAction) {
+      socket.emit("game:action", {
+        roomCode,
+        playerSession,
+        action
+      } satisfies GameActionEvent);
     },
     onSnapshot(handler: (event: RoomSnapshotEvent) => void) {
       socket.on("room:snapshot", handler);

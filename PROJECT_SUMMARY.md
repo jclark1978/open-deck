@@ -89,3 +89,7 @@ Updates should be:
   - frontend now supports create room, join room, session restore, bootstrap fetch, and live room snapshot subscription
   - UI now renders a real create/join form and a read-only room view with players, deck, discard, table, and private hand state
   - action controls are still pending, but the app now has an end-to-end visible draft connected to the real backend
+- MVP interaction controls added:
+  - host can now trigger shuffle and deal from the frontend room view
+  - players can now play cards from their hand and move shared table cards to the discard pile
+  - frontend room session flow now sends realtime game actions over Socket.IO and tracks pending action state
