@@ -1,15 +1,16 @@
 import type { PublicRoomSnapshot } from "@open-deck/shared";
 
+export { RoomService } from "./services/room-service.js";
+export { createApp } from "./server.js";
+
 export interface BackendAppInfo {
   name: string;
-  stage: "foundation";
+  stage: "foundation" | "room-engine" | "transport";
   snapshotShape: PublicRoomSnapshot | null;
 }
 
-// Slice 1 keeps the backend intentionally light and reserves room logic for Slice 3.
 export const backendAppInfo: BackendAppInfo = {
   name: "open-deck-backend",
-  stage: "foundation",
+  stage: "transport",
   snapshotShape: null
 };
-

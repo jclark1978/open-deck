@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
@@ -11,7 +12,8 @@
   "dependencies": {
     "@open-deck/shared": "workspace:*",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/react": "^19.1.13",
@@ -20,4 +22,3 @@
     "vite": "^7.1.7"
   }
 }
-

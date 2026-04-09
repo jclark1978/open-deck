@@ -1,8 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "outDir": "./dist",
     "rootDir": "./src",
+    "paths": {
+      "@open-deck/shared": ["../shared/dist/index.d.ts"]
+    },
     "declaration": true,
     "sourceMap": true
   }

@@ -2,6 +2,7 @@ export type RoomCode = string;
 export type PlayerId = string;
 export type SeatId = string;
 export type CardId = string;
+export type PlayerSession = string;
 
 export type Suit = "clubs" | "diamonds" | "hearts" | "spades";
 export type Rank =
@@ -27,6 +28,7 @@ export interface Card {
 
 export interface PlayerSummary {
   id: PlayerId;
+  seatId: SeatId;
   displayName: string;
   isHost: boolean;
   isConnected: boolean;
@@ -46,7 +48,8 @@ export interface PublicRoomSnapshot {
 
 export interface ViewerPrivateState {
   playerId: PlayerId;
-  playerSession: string;
+  seatId: SeatId;
+  playerSession: PlayerSession;
   hand: Card[];
 }
 
@@ -61,3 +64,60 @@ export type GameAction =
   | { type: "play_card"; cardId: CardId }
   | { type: "move_to_discard"; cardId: CardId };
 
+export type GameActionType = GameAction["type"];
+
+export interface RoomJoinEvent {
+  roomCode: RoomCode;
+  playerSession: PlayerSession;
+}
+
+export interface GameActionEvent {
+  roomCode: RoomCode;
+  playerSession: PlayerSession;
+  action: GameAction;
+}
+
+export interface RoomSnapshotEvent {
+  publicSnapshot: PublicRoomSnapshot;
+  viewer?: ViewerPrivateState;
+}
+
+export interface GameErrorEvent {
+  action: GameActionType;
+  reason:
+    | "not_found"
+    | "not_host"
+    | "invalid_count"
+    | "insufficient_cards"
+    | "card_not_in_hand"
+    | "card_not_in_play_area"
+    | "player_not_in_room"
+    | "invalid_session";
+}
+
+export interface RoomPolicy {
+  maxPlayers: number;
+  idleRoomTtlMs: number;
+  hostReconnectGraceMs: number;
+}
+
+export interface ApplyActionSuccess {
+  ok: true;
+  action: GameActionType;
+  publicSnapshot: PublicRoomSnapshot;
+}
+
+export interface ApplyActionError {
+  ok: false;
+  action: GameActionType;
+  reason:
+    | "not_found"
+    | "not_host"
+    | "invalid_count"
+    | "insufficient_cards"
+    | "card_not_in_hand"
+    | "card_not_in_play_area"
+    | "player_not_in_room";
+}
+
+export type ApplyActionResult = ApplyActionSuccess | ApplyActionError;

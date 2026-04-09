@@ -77,3 +77,15 @@ Updates should be:
   - `frontend`, `backend`, and `shared` package boundaries now exist
   - baseline TypeScript, lint, test, build, and CI scaffolding are in place
   - shared contract imports are wired so future slices can build on stable package boundaries
+- Shared contracts and room engine created:
+  - shared room, player, card, policy, bootstrap, and action result types now exist
+  - backend now has an in-memory authoritative room service for create, join, reconnect, disconnect, shuffle, deal, play, discard, and idle cleanup
+  - room engine tests cover host permissions, reconnect behavior, host transfer timing, room expiration, invalid actions, and card-zone invariants
+- Backend transport layer created:
+  - REST endpoints now support room creation, room join, and room bootstrap snapshot fetch
+  - Socket.IO now supports room session join and authoritative action-driven snapshot updates
+  - backend transport tests cover bootstrap flow and realtime snapshot propagation across multiple clients
+- First frontend draft created:
+  - frontend now supports create room, join room, session restore, bootstrap fetch, and live room snapshot subscription
+  - UI now renders a real create/join form and a read-only room view with players, deck, discard, table, and private hand state
+  - action controls are still pending, but the app now has an end-to-end visible draft connected to the real backend

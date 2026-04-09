@@ -7,14 +7,16 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@open-deck/shared": "workspace:*"
+    "@open-deck/shared": "workspace:*",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "@types/node": "^24.5.2"
+    "@types/node": "^24.5.2",
+    "socket.io-client": "^4.8.1"
   }
 }
-
