@@ -222,12 +222,24 @@ export function useRoomSession() {
     return sendAction({ type: "shuffle_deck" });
   }
 
+  function resetTable() {
+    return sendAction({ type: "reset_table" });
+  }
+
   function dealCards(count: number) {
     return sendAction({ type: "deal_cards", count });
   }
 
-  function playCard(cardId: string) {
-    return sendAction({ type: "play_card", cardId });
+  function drawCard(source: "draw" | "discard") {
+    return sendAction({ type: "draw_card", source });
+  }
+
+  function playCard(cardId: string, position: { x: number; y: number }) {
+    return sendAction({ type: "play_card", cardId, position });
+  }
+
+  function moveTableCard(cardId: string, position: { x: number; y: number }) {
+    return sendAction({ type: "move_table_card", cardId, position });
   }
 
   function moveToDiscard(cardId: string) {
@@ -280,8 +292,11 @@ export function useRoomSession() {
     createRoom,
     joinRoom,
     shuffleDeck,
+    resetTable,
     dealCards,
+    drawCard,
     playCard,
+    moveTableCard,
     moveToDiscard,
     leaveRoom
   };

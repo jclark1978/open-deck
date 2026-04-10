@@ -11,6 +11,7 @@ import type {
   RoomPolicy,
   SeatId,
   Suit,
+  TableCard,
   ViewerPrivateState
 } from "@open-deck/shared";
 
@@ -35,7 +36,7 @@ interface RoomState {
   players: RoomPlayer[];
   deck: Card[];
   discardPile: Card[];
-  sharedPlayArea: Card[];
+  sharedPlayArea: TableCard[];
 }
 
 interface CreateRoomInput {
@@ -66,8 +67,19 @@ interface DealCardsInput extends RoomActionInput {
   count: number;
 }
 
+interface DrawCardInput extends RoomActionInput {
+  source: "draw" | "discard";
+}
+
 interface CardActionInput extends RoomActionInput {
   cardId: CardId;
+}
+
+interface PositionedCardActionInput extends CardActionInput {
+  position: {
+    x: number;
+    y: number;
+  };
 }
 
 type IdFactory = () => string;
@@ -284,6 +296,45 @@ export class RoomService {
     return commitAction(room, input.now, "shuffle_deck");
   }
 
+  resetTable(input: RoomActionInput): ApplyActionResult {
+    const room = this.rooms.get(input.roomCode);
+
+    if (!room) {
+      return rejectAction("reset_table", "not_found");
+    }
+
+    const actor = room.players.find((player) => player.id === input.actorId);
+
+    if (!actor) {
+      return rejectAction("reset_table", "player_not_in_room");
+    }
+
+    if (room.hostPlayerId !== input.actorId) {
+      return rejectAction("reset_table", "not_host");
+    }
+
+    const cardsToReturn = [
+      ...room.deck,
+      ...room.discardPile,
+      ...room.sharedPlayArea,
+      ...room.players.flatMap((player) => player.hand)
+    ].map(({ id, rank, suit }) => ({
+      id,
+      rank,
+      suit
+    }));
+
+    room.deck = shuffleCards(cardsToReturn, this.random);
+    room.discardPile = [];
+    room.sharedPlayArea = [];
+
+    for (const player of room.players) {
+      player.hand = [];
+    }
+
+    return commitAction(room, input.now, "reset_table");
+  }
+
   dealCards(input: DealCardsInput): ApplyActionResult {
     const room = this.rooms.get(input.roomCode);
 
@@ -304,6 +355,10 @@ export class RoomService {
     if (!Number.isInteger(input.count) || input.count <= 0) {
       return rejectAction("deal_cards", "invalid_count");
     }
+
+    // The tabletop UI no longer exposes manual shuffle, so dealing reshuffles
+    // the remaining deck before cards are distributed.
+    room.deck = shuffleCards(room.deck, this.random);
 
     const activePlayers = room.players.filter((player) => player.isConnected);
     const neededCards = activePlayers.length * input.count;
@@ -327,7 +382,31 @@ export class RoomService {
     return commitAction(room, input.now, "deal_cards");
   }
 
-  playCard(input: CardActionInput): ApplyActionResult {
+  drawCard(input: DrawCardInput): ApplyActionResult {
+    const room = this.rooms.get(input.roomCode);
+
+    if (!room) {
+      return rejectAction("draw_card", "not_found");
+    }
+
+    const actor = room.players.find((player) => player.id === input.actorId);
+
+    if (!actor) {
+      return rejectAction("draw_card", "player_not_in_room");
+    }
+
+    const drawnCard =
+      input.source === "discard" ? room.discardPile.pop() : room.deck.shift();
+
+    if (!drawnCard) {
+      return rejectAction("draw_card", "insufficient_cards");
+    }
+
+    actor.hand.push(drawnCard);
+    return commitAction(room, input.now, "draw_card");
+  }
+
+  playCard(input: PositionedCardActionInput): ApplyActionResult {
     const room = this.rooms.get(input.roomCode);
 
     if (!room) {
@@ -347,9 +426,36 @@ export class RoomService {
     }
 
     const [card] = actor.hand.splice(cardIndex, 1);
-    room.sharedPlayArea.push(card);
+    room.sharedPlayArea.push({
+      ...card,
+      ...toTablePosition(input.position, getNextTableZIndex(room))
+    });
 
     return commitAction(room, input.now, "play_card");
+  }
+
+  moveTableCard(input: PositionedCardActionInput): ApplyActionResult {
+    const room = this.rooms.get(input.roomCode);
+
+    if (!room) {
+      return rejectAction("move_table_card", "not_found");
+    }
+
+    const actor = room.players.find((player) => player.id === input.actorId);
+
+    if (!actor) {
+      return rejectAction("move_table_card", "player_not_in_room");
+    }
+
+    const tableCard = room.sharedPlayArea.find((card) => card.id === input.cardId);
+
+    if (!tableCard) {
+      return rejectAction("move_table_card", "card_not_in_play_area");
+    }
+
+    Object.assign(tableCard, toTablePosition(input.position, getNextTableZIndex(room)));
+
+    return commitAction(room, input.now, "move_table_card");
   }
 
   moveToDiscard(input: CardActionInput): ApplyActionResult {
@@ -365,9 +471,15 @@ export class RoomService {
       return rejectAction("move_to_discard", "player_not_in_room");
     }
 
-    const cardIndex = room.sharedPlayArea.findIndex(
-      (card) => card.id === input.cardId
-    );
+    const handCardIndex = actor.hand.findIndex((card) => card.id === input.cardId);
+
+    if (handCardIndex !== -1) {
+      const [card] = actor.hand.splice(handCardIndex, 1);
+      room.discardPile.push(card);
+      return commitAction(room, input.now, "move_to_discard");
+    }
+
+    const cardIndex = room.sharedPlayArea.findIndex((card) => card.id === input.cardId);
 
     if (cardIndex === -1) {
       return rejectAction("move_to_discard", "card_not_in_play_area");
@@ -491,7 +603,7 @@ function toPublicSnapshot(room: RoomState): PublicRoomSnapshot {
     deckCount: room.deck.length,
     discardCount: room.discardPile.length,
     discardTopCard: room.discardPile.at(-1) ?? null,
-    sharedPlayArea: [...room.sharedPlayArea],
+    sharedPlayArea: room.sharedPlayArea.map((card) => ({ ...card })),
     players: room.players.map((player) => ({
       id: player.id,
       seatId: player.seatId,
@@ -547,4 +659,27 @@ function pickNextHost(players: RoomPlayer[]): RoomPlayer | null {
   }
 
   return [...pool].sort((left, right) => left.joinedAt - right.joinedAt)[0];
+}
+
+function getNextTableZIndex(room: RoomState) {
+  return room.sharedPlayArea.reduce((highest, card) => Math.max(highest, card.zIndex), 0) + 1;
+}
+
+function toTablePosition(
+  position: { x: number; y: number },
+  zIndex: number
+) {
+  return {
+    x: clamp(position.x, 0.08, 0.92),
+    y: clamp(position.y, 0.1, 0.9),
+    zIndex
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, value));
 }

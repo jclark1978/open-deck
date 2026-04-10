@@ -239,10 +239,26 @@ function applyGameAction(
   switch (action.type) {
     case "shuffle_deck":
       return roomService.shuffleDeck({ roomCode, actorId });
+    case "reset_table":
+      return roomService.resetTable({ roomCode, actorId });
     case "deal_cards":
       return roomService.dealCards({ roomCode, actorId, count: action.count });
+    case "draw_card":
+      return roomService.drawCard({ roomCode, actorId, source: action.source });
     case "play_card":
-      return roomService.playCard({ roomCode, actorId, cardId: action.cardId });
+      return roomService.playCard({
+        roomCode,
+        actorId,
+        cardId: action.cardId,
+        position: action.position
+      });
+    case "move_table_card":
+      return roomService.moveTableCard({
+        roomCode,
+        actorId,
+        cardId: action.cardId,
+        position: action.position
+      });
     case "move_to_discard":
       return roomService.moveToDiscard({ roomCode, actorId, cardId: action.cardId });
   }

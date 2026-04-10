@@ -6,6 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUN_DIR="$ROOT_DIR/.run"
 BACKEND_PID_FILE="$RUN_DIR/backend.pid"
 FRONTEND_PID_FILE="$RUN_DIR/frontend.pid"
+BACKEND_PORT=3001
+FRONTEND_PORT=5173
 
 stop_process() {
   local name="$1"
@@ -52,5 +54,32 @@ stop_process() {
   rm -f "$pid_file"
 }
 
+stop_port_listener() {
+  local name="$1"
+  local port="$2"
+  local pids
+
+  pids="$(ss -ltnp "sport = :$port" 2>/dev/null | awk -F 'pid=' 'NF > 1 {split($2, a, ","); print a[1]}' | sort -u)"
+
+  if [[ -z "$pids" ]]; then
+    return
+  fi
+
+  for pid in $pids; do
+    if kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      sleep 0.5
+
+      if kill -0 "$pid" 2>/dev/null; then
+        kill -9 "$pid" 2>/dev/null || true
+      fi
+
+      echo "Stopped $name listener on port $port (PID $pid)."
+    fi
+  done
+}
+
 stop_process "frontend" "$FRONTEND_PID_FILE"
 stop_process "backend" "$BACKEND_PID_FILE"
+stop_port_listener "frontend" "$FRONTEND_PORT"
+stop_port_listener "backend" "$BACKEND_PORT"

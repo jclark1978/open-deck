@@ -14,9 +14,11 @@ export function App() {
         viewer={roomSession.viewer}
         actions={{
           pendingAction: roomSession.pendingAction ?? null,
-          onShuffleDeck: roomSession.shuffleDeck,
           onDealCards: roomSession.dealCards,
+          onResetTable: roomSession.resetTable,
+          onDrawCard: roomSession.drawCard,
           onPlayCard: roomSession.playCard,
+          onMoveTableCard: roomSession.moveTableCard,
           onMoveToDiscard: roomSession.moveToDiscard
         }}
         onLeaveRoom={roomSession.leaveRoom}

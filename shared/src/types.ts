@@ -26,6 +26,14 @@ export interface Card {
   rank: Rank;
 }
 
+export interface TablePosition {
+  x: number;
+  y: number;
+  zIndex: number;
+}
+
+export interface TableCard extends Card, TablePosition {}
+
 export interface PlayerSummary {
   id: PlayerId;
   seatId: SeatId;
@@ -42,7 +50,7 @@ export interface PublicRoomSnapshot {
   deckCount: number;
   discardCount: number;
   discardTopCard: Card | null;
-  sharedPlayArea: Card[];
+  sharedPlayArea: TableCard[];
   players: PlayerSummary[];
 }
 
@@ -60,8 +68,11 @@ export interface BootstrapResponse {
 
 export type GameAction =
   | { type: "shuffle_deck" }
+  | { type: "reset_table" }
   | { type: "deal_cards"; count: number }
-  | { type: "play_card"; cardId: CardId }
+  | { type: "draw_card"; source: "draw" | "discard" }
+  | { type: "play_card"; cardId: CardId; position: Pick<TablePosition, "x" | "y"> }
+  | { type: "move_table_card"; cardId: CardId; position: Pick<TablePosition, "x" | "y"> }
   | { type: "move_to_discard"; cardId: CardId };
 
 export type GameActionType = GameAction["type"];

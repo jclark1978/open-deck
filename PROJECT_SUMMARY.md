@@ -93,3 +93,7 @@ Updates should be:
   - host can now trigger shuffle and deal from the frontend room view
   - players can now play cards from their hand and move shared table cards to the discard pile
   - frontend room session flow now sends realtime game actions over Socket.IO and tracks pending action state
+- Tabletop interaction model updated:
+  - the room UI now favors a shared-table layout over form-based card controls
+  - cards can now be dragged from the current player's hand to the shared table and from the shared table to the discard pile
+  - the visible shuffle button has been removed from the UI and dealing now shuffles the remaining deck automatically behind the scenes

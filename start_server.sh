@@ -8,18 +8,25 @@ BACKEND_LOG="$RUN_DIR/backend.log"
 FRONTEND_LOG="$RUN_DIR/frontend.log"
 BACKEND_PID_FILE="$RUN_DIR/backend.pid"
 FRONTEND_PID_FILE="$RUN_DIR/frontend.pid"
+BACKEND_PORT=3001
+FRONTEND_PORT=5173
+
+port_in_use() {
+  local port="$1"
+  ss -ltn "sport = :$port" | tail -n +2 | grep -q .
+}
 
 mkdir -p "$RUN_DIR"
 
 cd "$ROOT_DIR"
 
-if [[ -f "$BACKEND_PID_FILE" ]] && kill -0 "$(cat "$BACKEND_PID_FILE")" 2>/dev/null; then
-  echo "Backend is already running with PID $(cat "$BACKEND_PID_FILE")."
+if port_in_use "$BACKEND_PORT"; then
+  echo "Backend port $BACKEND_PORT is already in use. Run ./stop_server.sh first."
   exit 1
 fi
 
-if [[ -f "$FRONTEND_PID_FILE" ]] && kill -0 "$(cat "$FRONTEND_PID_FILE")" 2>/dev/null; then
-  echo "Frontend is already running with PID $(cat "$FRONTEND_PID_FILE")."
+if port_in_use "$FRONTEND_PORT"; then
+  echo "Frontend port $FRONTEND_PORT is already in use. Run ./stop_server.sh first."
   exit 1
 fi
 
@@ -30,10 +37,10 @@ corepack pnpm lint
 corepack pnpm test
 corepack pnpm build
 
-echo "Starting backend on http://127.0.0.1:3001 ..."
+echo "Starting backend on http://127.0.0.1:${BACKEND_PORT} ..."
 (
   cd "$ROOT_DIR"
-  exec env PORT=3001 corepack pnpm --filter @open-deck/backend start
+  exec env PORT="$BACKEND_PORT" node "$ROOT_DIR/backend/dist/main.js"
 ) >"$BACKEND_LOG" 2>&1 &
 BACKEND_PID=$!
 echo "$BACKEND_PID" >"$BACKEND_PID_FILE"
@@ -46,7 +53,7 @@ if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
   exit 1
 fi
 
-echo "Starting frontend on http://127.0.0.1:5173 ..."
+echo "Starting frontend on http://127.0.0.1:${FRONTEND_PORT} ..."
 (
   cd "$ROOT_DIR"
   exec corepack pnpm --filter @open-deck/frontend exec vite --host 0.0.0.0
